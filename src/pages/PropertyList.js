@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
@@ -15,11 +15,7 @@ const PropertyList = () => {
 
   const pageSize = 6;
 
-  useEffect(() => {
-    fetchProperties();
-  }, [search, city, minPrice, maxPrice, sort, currentPage]);
-
-  const fetchProperties = async () => {
+  const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get(`/api/properties`, {
@@ -40,7 +36,11 @@ const PropertyList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, city, minPrice, maxPrice, sort, currentPage]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   const clearFilters = () => {
     setSearch('');
