@@ -1,140 +1,177 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 
-function PropertyList() {
+const PropertyList = () => {
   const [properties, setProperties] = useState([]);
   const [search, setSearch] = useState('');
-  const [cityFilter, setCityFilter] = useState('');
+  const [city, setCity] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [message, setMessage] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  const pageSize = 6;
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/properties')
-      .then((res) => res.json())
-      .then((data) => setProperties(data));
-  }, []);
+    fetchProperties();
+  }, [search, city, minPrice, maxPrice, sort, currentPage]);
 
-  const filtered = properties.filter((p) => {
-    const matchSearch =
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.description.toLowerCase().includes(search.toLowerCase());
-
-    const matchCity = cityFilter ? p.city.toLowerCase() === cityFilter.toLowerCase() : true;
-    const matchMin = minPrice ? p.price >= parseInt(minPrice) : true;
-    const matchMax = maxPrice ? p.price <= parseInt(maxPrice) : true;
-
-    return matchSearch && matchCity && matchMin && matchMax;
-  });
-
-  const handleContact = (property) => {
-    setSelectedProperty(property);
+  const fetchProperties = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`/api/properties`, {
+        params: {
+          search,
+          city,
+          minPrice,
+          maxPrice,
+          sort,
+          page: currentPage,
+          limit: pageSize,
+        },
+      });
+      setProperties(res.data.properties || res.data); // fallback if pagination not on backend
+      setTotalPages(res.data.totalPages || 1);
+    } catch (err) {
+      console.error('Error fetching properties:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const closeModal = () => {
-    setSelectedProperty(null);
-    setMessage('');
+  const clearFilters = () => {
+    setSearch('');
+    setCity('');
+    setMinPrice('');
+    setMaxPrice('');
+    setSort('newest');
+    setCurrentPage(1);
   };
+
+  const cityOptions = ['Chandigarh', 'Mohali', 'Ludhiana', 'Jalandhar'];
 
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-4">🛍️ Explore Properties</h1>
+    <div className="bg-gray-50 min-h-screen px-4 sm:px-8 py-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">
+        🏘️ Explore Properties for Sale
+      </h1>
 
-      {/* Search & Filter */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <input
           type="text"
           placeholder="Search by title or description"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="border p-2 rounded w-full sm:w-1/3"
+          className="p-2 border rounded-md"
         />
-        <input
-          type="text"
-          placeholder="Filter by city"
-          value={cityFilter}
-          onChange={(e) => setCityFilter(e.target.value)}
-          className="border p-2 rounded w-full sm:w-1/4"
-        />
+        <select
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          className="p-2 border rounded-md"
+        >
+          <option value="">All Cities</option>
+          {cityOptions.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
         <input
           type="number"
           placeholder="Min Price"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          className="border p-2 rounded w-full sm:w-1/5"
+          className="p-2 border rounded-md"
         />
         <input
           type="number"
           placeholder="Max Price"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          className="border p-2 rounded w-full sm:w-1/5"
+          className="p-2 border rounded-md"
         />
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="p-2 border rounded-md"
+        >
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="lowToHigh">Price: Low to High</option>
+          <option value="highToLow">Price: High to Low</option>
+        </select>
       </div>
 
-      {/* Property Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-        {filtered.map((property) => (
-          <div key={property._id} className="border rounded shadow p-4">
-            <img
-              src={property.image}
-              alt={property.title}
-              className="w-full h-48 object-cover rounded mb-3"
-            />
-            <h2 className="text-xl font-semibold">{property.title}</h2>
-            <p className="text-gray-600">{property.city}</p>
-            <p className="text-green-700 font-bold mb-2">₹ {property.price.toLocaleString()}</p>
-            <Link to={`/property/${property._id}`} className="text-blue-600 underline">
-              View Details
-            </Link>
-            <button
-              onClick={() => handleContact(property)}
-              className="mt-2 block bg-green-600 text-white px-3 py-1 rounded"
+      <div className="text-right mb-4">
+        <button
+          onClick={clearFilters}
+          className="bg-gray-300 hover:bg-gray-400 text-sm px-3 py-1 rounded-md"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      {/* Listings */}
+      {loading ? (
+        <p className="text-center text-gray-500">Loading properties...</p>
+      ) : properties.length === 0 ? (
+        <p className="text-center text-gray-500">No properties found.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {properties.map((property) => (
+            <div
+              key={property._id}
+              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
             >
-              Contact Seller
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {/* Contact Modal */}
-      {selectedProperty && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-semibold mb-2">Contact Seller</h2>
-            <p className="text-sm mb-4">
-              📞 <strong>{selectedProperty.contact}</strong>
-            </p>
-            <textarea
-              rows="4"
-              className="w-full border p-2 rounded mb-2"
-              placeholder="Your message to the seller..."
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={closeModal}
-                className="bg-gray-300 px-3 py-1 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  alert(`✅ Message sent to seller: ${message}`);
-                  closeModal();
-                }}
-                className="bg-green-600 text-white px-3 py-1 rounded"
-              >
-                Send
-              </button>
+              <Link to={`/property/${property._id}`}>
+                <img
+                  src={property.images?.[0] || 'https://via.placeholder.com/400'}
+                  alt={property.title}
+                  className="h-48 w-full object-cover"
+                />
+                <div className="p-4">
+                  <div className="flex justify-between items-center mb-1">
+                    <h2 className="text-lg font-semibold">{property.title}</h2>
+                    {property.isPremium && (
+                      <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                        ⭐ Premium
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-600">{property.location}</p>
+                  <p className="text-indigo-600 font-bold text-lg mt-2">
+                    ₹{property.price.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {property.bedrooms} Bed • {property.bathrooms} Bath • {property.area} sqft
+                  </p>
+                </div>
+              </Link>
             </div>
-          </div>
+          ))}
         </div>
       )}
+
+      {/* Pagination */}
+      <div className="mt-8 flex justify-center gap-2">
+        {Array.from({ length: totalPages }, (_, idx) => (
+          <button
+            key={idx + 1}
+            onClick={() => setCurrentPage(idx + 1)}
+            className={`px-3 py-1 rounded-md text-sm ${
+              currentPage === idx + 1
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {idx + 1}
+          </button>
+        ))}
+      </div>
     </div>
   );
-}
+};
 
 export default PropertyList;
