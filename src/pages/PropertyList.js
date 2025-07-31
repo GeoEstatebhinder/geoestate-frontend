@@ -29,10 +29,21 @@ const PropertyList = () => {
           limit: pageSize,
         },
       });
-      setProperties(res.data.properties || res.data); // fallback if pagination not on backend
-      setTotalPages(res.data.totalPages || 1);
+
+      const result = res.data;
+
+      const propertyArray = Array.isArray(result?.properties)
+        ? result.properties
+        : Array.isArray(result)
+        ? result
+        : [];
+
+      setProperties(propertyArray);
+      setTotalPages(result.totalPages || 1);
     } catch (err) {
-      console.error('Error fetching properties:', err);
+      console.error('❌ Error fetching properties:', err);
+      setProperties([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
