@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import api from '../api'; // ✅ import your axios instance
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -11,9 +12,15 @@ const PropertyDetail = () => {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/properties/${id}`)
-      .then(res => res.json())
-      .then(data => setProperty(data));
+    const fetchProperty = async () => {
+      try {
+        const res = await api.get(`/api/properties/${id}`); // ✅ axios call
+        setProperty(res.data);
+      } catch (error) {
+        console.error('Failed to fetch property:', error);
+      }
+    };
+    fetchProperty();
   }, [id]);
 
   const customIcon = new L.Icon({

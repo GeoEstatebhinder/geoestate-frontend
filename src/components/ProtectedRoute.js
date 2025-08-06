@@ -5,13 +5,20 @@ const ProtectedRoute = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = loading
 
   useEffect(() => {
+    let isMounted = true; // to avoid state updates on unmounted component
     const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+
+    if (isMounted) {
+      setIsAuthenticated(!!token); // simple check: token exists
+    }
+
+    return () => {
+      isMounted = false; // cleanup to avoid memory leaks
+    };
   }, []);
 
   if (isAuthenticated === null) {
-    // Optional: render loading screen or nothing during check
-    return <div className="text-center mt-10">Loading...</div>;
+    return <div className="text-center mt-10 text-gray-500">Loading...</div>;
   }
 
   return isAuthenticated ? children : <Navigate to="/login" replace />;

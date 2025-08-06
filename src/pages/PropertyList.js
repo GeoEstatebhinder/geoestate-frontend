@@ -1,5 +1,6 @@
+// src/pages/PropertyList.js
 import React, { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
+import api from '../api'; // ✅ Use custom axios instance
 import { Link } from 'react-router-dom';
 
 const PropertyList = () => {
@@ -18,7 +19,7 @@ const PropertyList = () => {
   const fetchProperties = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`/api/properties`, {
+      const res = await api.get(`/api/properties`, {
         params: {
           search,
           city,
@@ -67,7 +68,7 @@ const PropertyList = () => {
   return (
     <div className="bg-gray-50 min-h-screen px-4 sm:px-8 py-6">
       <h1 className="text-3xl font-bold mb-6 text-center">
-        🏘️ Explore Properties for Sale
+        🏨️ Explore Properties for Sale
       </h1>
 
       {/* Filters */}

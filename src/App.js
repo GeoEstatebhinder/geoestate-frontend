@@ -1,16 +1,27 @@
 // src/App.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import axios from 'axios';
+
 import PropertyList from './pages/PropertyList';
 import PropertyDetail from './pages/PropertyDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import LoginPage from './pages/LoginPage';
 import UploadPage from './pages/UploadPage';
 import MapView from './pages/MapView';
+
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 
 function App() {
+  // ✅ Set Axios default Authorization header from localStorage
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  }, []);
+
   return (
     <Router>
       <Navbar />
