@@ -2,10 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://geoestate-backend.onrender.com/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: 'https://your-render-backend-url.onrender.com/api', // update this
+  withCredentials: true,
 });
 
 export default api;
